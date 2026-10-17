@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>E-redação — Painel de progresso</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f3f5fb,#0c1020);
+  --ink: light-dark(#192238,#f1f4ff);
+  --muted: light-dark(#74809a,#a2acc5);
+  --glass: light-dark(rgb(255 255 255 / .66),rgb(25 31 54 / .66));
+  --glass-strong: light-dark(rgb(255 255 255 / .86),rgb(25 31 54 / .88));
+  --line: light-dark(rgb(115 130 170 / .22),rgb(177 191 237 / .15));
+  --field: light-dark(rgb(247 249 255 / .9),rgb(15 20 39 / .8));
+  --accent: #7c83ff;
+  --accent2: #50c8df;
+  --good: light-dark(#22876f,#66d9b5);
+  --warn: light-dark(#b7782b,#ffca78);
+  --shadow: 0 18px 54px rgb(33 45 93 / .10);
+}
+* { box-sizing:border-box; }
+html { min-height:100%; background:var(--bg); }
+body { margin:0; min-height:100vh; color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif; background:var(--bg); }
+button,input,select,textarea { font:inherit; }
+button { cursor:pointer; }
+#app { min-height:100vh; width:100%; border-radius:0; overflow:hidden; position:relative; isolation:isolate; background:var(--bg); }
+.ambient { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+.orb { position:absolute; border-radius:50%; filter:blur(2px); opacity:.7; }
+.orb.one { width:520px;height:520px;left:-190px;top:-180px;background:radial-gradient(circle at 50% 50%,#b7c4ff 0%,rgb(183 196 255 / .38) 42%,transparent 72%); }
+.orb.two { width:580px;height:580px;right:-230px;top:120px;background:radial-gradient(circle at 50% 50%,#a4eef0 0%,rgb(164 238 240 / .28) 44%,transparent 72%); }
+.orb.three { width:570px;height:570px;left:28%;bottom:-390px;background:radial-gradient(circle at 50% 50%,#d6b9ff 0%,rgb(214 185 255 / .24) 46%,transparent 72%); }
+.shell { max-width:1480px; margin:auto; display:grid; grid-template-columns:242px minmax(0,1fr); gap:22px; padding:22px; min-height:100vh; }
+.glass { background:var(--glass); border:1px solid var(--line); box-shadow:var(--shadow); backdrop-filter:blur(26px) saturate(155%); -webkit-backdrop-filter:blur(26px) saturate(155%); }
+.sidebar { border-radius:28px; padding:22px 15px; display:flex; flex-direction:column; min-height:calc(100vh - 44px); align-self:stretch; }
+.brand { display:flex; align-items:center; gap:11px; padding:3px 9px 25px; }
+.brand-mark { width:40px;height:40px;border-radius:15px;display:grid;place-items:center;color:#fff;background:linear-gradient(145deg,#9395ff,#65cfe4);box-shadow:0 8px 18px rgb(106 128 235 / .28); }
+.brand-mark svg { width:22px;height:22px; }
+.brand-name { font-size:18px;font-weight:760;letter-spacing:-.5px; }
+.brand-caption { color:var(--muted);font-size:11px;margin-top:2px; }
+.nav-label { color:var(--muted);font-weight:750;font-size:10px;letter-spacing:1.5px;padding:10px 12px 8px; }
+.nav { display:grid;gap:5px; }
+.nav-btn { display:flex;align-items:center;gap:12px;text-align:left;padding:12px 13px;border:1px solid transparent;border-radius:14px;background:transparent;color:var(--muted);font-size:13px;font-weight:600;transition:.18s; }
+.nav-btn svg { width:18px;height:18px;opacity:.86;flex:none; }
+.nav-btn:hover { background:var(--glass);color:var(--ink); }
+.nav-btn.active { background:light-dark(rgb(124 131 255 / .13),rgb(124 131 255 / .19));border-color:light-dark(rgb(124 131 255 / .18),rgb(124 131 255 / .25));color:var(--ink); }
+.nav-btn.active svg { color:var(--accent); }
+.sidebar-bottom { margin-top:auto; }
+.goal-mini { border:1px solid var(--line);border-radius:18px;padding:14px;background:light-dark(rgb(255 255 255 / .44),rgb(12 17 38 / .36)); }
+.goal-top { display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;font-weight:700; }
+.goal-top span:last-child { color:var(--accent); }
+.mini-track { height:5px;background:var(--line);border-radius:99px;overflow:hidden;margin:11px 0 7px; }
+.mini-track span { display:block;width:76%;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2)); }
+.goal-sub { font-size:10px;color:var(--muted);line-height:1.5; }
+.local-note { font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:16px 8px 2px; }
+.local-note span { width:6px;height:6px;border-radius:50%;background:var(--good); }
+main { min-width:0;padding:4px 2px 28px; }
+.topbar { display:flex;align-items:center;justify-content:space-between;gap:16px;margin:3px 0 25px; }
+.eyebrow { color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1.65px;font-weight:800;margin-bottom:6px; }
+h1 { margin:0;font-size:clamp(24px,3vw,35px);line-height:1.08;letter-spacing:-1.2px;font-weight:760; }
+.top-subtitle { margin-top:8px;color:var(--muted);font-size:13px; }
+.top-actions { display:flex;align-items:center;gap:10px; }
+.icon-btn { height:42px;width:42px;border-radius:15px;display:grid;place-items:center;border:1px solid var(--line);background:var(--glass);color:var(--ink); }
+.icon-btn svg { width:18px;height:18px; }
+.primary-btn { display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:15px;background:linear-gradient(135deg,#777ffb,#8f93ff 53%,#58c7dc);color:#fff;font-size:12px;font-weight:750;padding:13px 17px;box-shadow:0 8px 20px rgb(114 125 245 / .26);transition:transform .18s,filter .18s; }
+.primary-btn:hover { transform:translateY(-1px);filter:saturate(1.08); }
+.primary-btn svg { width:16px;height:16px; }
+.secondary-btn { background:var(--glass);color:var(--ink);border:1px solid var(--line);border-radius:13px;padding:10px 13px;font-size:12px;font-weight:650; }
+.demo-banner { display:flex;align-items:center;gap:10px;border:1px solid light-dark(rgb(183 120 43 / .22),rgb(255 202 120 / .22));background:light-dark(rgb(255 246 224 / .62),rgb(90 65 27 / .18));padding:11px 14px;border-radius:15px;font-size:11px;color:var(--muted);margin-bottom:18px; }
+.demo-banner strong { color:var(--warn); }
+.demo-banner svg { width:17px;height:17px;flex:none;color:var(--warn); }
+.demo-banner button { margin-left:auto;white-space:nowrap;border:0;background:transparent;color:var(--ink);font-size:11px;font-weight:750; }
+.metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:15px; }
+.metric { padding:17px 17px 15px;border-radius:22px;min-width:0; }
+.metric-head { display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:11px;font-weight:650;gap:8px; }
+.metric-icon { width:33px;height:33px;border-radius:12px;display:grid;place-items:center;background:light-dark(rgb(124 131 255 / .12),rgb(124 131 255 / .19));color:var(--accent); }
+.metric-icon svg { width:17px;height:17px; }
+.metric-value { font-size:clamp(23px,2.4vw,31px);font-weight:780;letter-spacing:-1px;margin:12px 0 5px;white-space:nowrap; }
+.metric-foot { color:var(--muted);font-size:10px;line-height:1.4; }
+.metric-foot .up { color:var(--good);font-weight:750; }
+.content-grid { display:grid;grid-template-columns:minmax(0,1.6fr) minmax(260px,.9fr);gap:14px;align-items:stretch;margin-bottom:15px; }
+.panel { border-radius:24px;padding:20px;min-width:0; }
+.panel-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px; }
+.panel-title { font-size:15px;font-weight:760;letter-spacing:-.25px; }
+.panel-description { color:var(--muted);font-size:11px;margin-top:5px;line-height:1.4; }
+.pill { white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid var(--line);border-radius:99px;color:var(--muted);font-size:10px;font-weight:700;background:light-dark(rgb(255 255 255 / .35),rgb(18 23 44 / .35)); }
+.pill-dot { width:6px;height:6px;border-radius:50%;background:var(--accent); }
+.chart-wrap { height:205px;position:relative; }
+#progressChart { width:100%;height:100%;overflow:visible; }
+.chart-label { font-size:10px;fill:var(--muted); }
+.chart-grid { stroke:var(--line);stroke-dasharray:3 5; }
+.chart-line { stroke:var(--accent);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round; }
+.chart-point { fill:var(--glass-strong);stroke:var(--accent);stroke-width:2.5; }
+.chart-legend { display:flex;align-items:center;gap:8px;margin-top:3px;color:var(--muted);font-size:10px; }
+.legend-dot { width:7px;height:7px;border-radius:50%;background:var(--accent); }
+.donut-area { display:flex;align-items:center;justify-content:center;padding:3px 0 15px; }
+.donut { position:relative;width:142px;height:142px;display:grid;place-items:center; }
+.donut svg { position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg); }
+.donut-bg { stroke:var(--line);fill:none;stroke-width:10; }
+.donut-value { stroke:url(#donutGradient);fill:none;stroke-width:10;stroke-linecap:round;stroke-dasharray:270 339; }
+.donut-center { text-align:center; }
+.donut-center strong { display:block;font-size:30px;letter-spacing:-1px; }
+.donut-center span { display:block;color:var(--muted);font-size:10px;margin-top:1px; }
+.goal-status { color:var(--good);font-size:11px;text-align:center;font-weight:700; }
+.goal-progress { display:flex;gap:10px;align-items:center;margin-top:18px;padding-top:15px;border-top:1px solid var(--line); }
+.goal-progress strong { font-size:13px; }
+.goal-progress small { display:block;color:var(--muted);font-size:10px;margin-top:3px; }
+.goal-progress .mini-track { flex:1;margin:0; }
+.competency-panel { margin-bottom:15px; }
+.comp-list { display:grid;gap:14px; }
+.comp-row { display:grid;grid-template-columns:minmax(126px,1fr) minmax(100px,2.2fr) 56px;align-items:center;gap:12px; }
+.comp-name { font-size:11px;font-weight:650; }
+.comp-name small { display:block;font-size:10px;color:var(--muted);font-weight:450;margin-top:3px; }
+.comp-track { height:8px;border-radius:99px;background:var(--line);overflow:hidden; }
+.comp-fill { height:100%;border-radius:99px;background:linear-gradient(90deg,#888dff,#62cadf); }
+.comp-score { text-align:right;font-size:12px;font-weight:750;font-variant-numeric:tabular-nums; }
+.comp-score small { color:var(--muted);font-size:9px;font-weight:500; }
+.lower-grid { display:grid;grid-template-columns:minmax(0,1.4fr) minmax(240px,.8fr);gap:14px; }
+.table-panel { padding:0;overflow:hidden; }
+.table-panel .panel-head { padding:20px 20px 0; }
+.table-wrap { overflow-x:auto; }
+table { width:100%;border-collapse:collapse;font-size:11px;white-space:nowrap; }
+th { text-align:left;color:var(--muted);font-weight:750;font-size:9px;text-transform:uppercase;letter-spacing:.65px;padding:12px 20px;border-bottom:1px solid var(--line); }
+td { padding:14px 20px;border-bottom:1px solid var(--line); }
+tbody tr:last-child td { border-bottom:0; }
+tbody tr:hover { background:light-dark(rgb(255 255 255 / .28),rgb(255 255 255 / .025)); }
+.topic-cell { white-space:normal;min-width:165px;max-width:300px; }
+.topic-name { font-weight:700;line-height:1.35; }
+.topic-date { color:var(--muted);font-size:10px;margin-top:4px; }
+.score-chip { background:light-dark(rgb(124 131 255 / .13),rgb(124 131 255 / .2));color:light-dark(#565be4,#c0c3ff);border-radius:9px;padding:6px 8px;font-weight:800;font-variant-numeric:tabular-nums; }
+.status { display:inline-flex;align-items:center;gap:5px;color:var(--good);font-size:10px;font-weight:700; }
+.status:before { content:"";width:5px;height:5px;border-radius:50%;background:currentColor; }
+.text-link { border:0;background:transparent;color:var(--accent);font-size:11px;font-weight:750; }
+.insight-list { display:grid;gap:11px; }
+.insight { display:flex;gap:11px;align-items:flex-start;padding:12px;border:1px solid var(--line);background:light-dark(rgb(255 255 255 / .33),rgb(13 18 38 / .29));border-radius:16px; }
+.insight-icon { width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:light-dark(rgb(80 200 170 / .13),rgb(80 200 170 / .17));color:var(--good);flex:none; }
+.insight-icon svg { width:15px;height:15px; }
+.insight-icon.attention { background:light-dark(rgb(242 185 90 / .16),rgb(242 185 90 / .15));color:var(--warn); }
+.insight strong { font-size:11px;line-height:1.4;display:block; }
+.insight p { margin:4px 0 0;color:var(--muted);font-size:10px;line-height:1.55; }
+.view { display:none;animation:fade .22s ease; }
+.view.active { display:block; }
+@keyframes fade { from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none} }
+.section-toolbar { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px; }
+.search-input { border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:13px;padding:11px 13px;font-size:11px;min-width:200px;outline:none; }
+.search-input:focus,.field:focus { border-color:var(--accent);box-shadow:0 0 0 3px rgb(124 131 255 / .12); }
+.library-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px; }
+.essay-card { padding:18px;border-radius:21px; }
+.essay-card-top { display:flex;align-items:flex-start;justify-content:space-between;gap:10px; }
+.essay-card h3 { font-size:13px;margin:0 0 6px;line-height:1.45; }
+.essay-card p { margin:0;color:var(--muted);font-size:10px;line-height:1.5; }
+.essay-card-score { font-size:23px;font-weight:800;letter-spacing:-.8px;color:var(--accent); }
+.essay-card-footer { display:flex;justify-content:space-between;align-items:center;padding-top:14px;margin-top:15px;border-top:1px solid var(--line);color:var(--muted);font-size:10px; }
+.empty-state { text-align:center;padding:38px 18px;color:var(--muted);font-size:12px;line-height:1.6; }
+.empty-state svg { display:block;margin:0 auto 12px;width:30px;height:30px;color:var(--accent); }
+.empty-state strong { display:block;color:var(--ink);margin-bottom:4px;font-size:14px; }
+.upload-zone { display:flex;flex-direction:column;align-items:center;text-align:center;padding:35px 20px;border-radius:24px;border:1.5px dashed light-dark(rgb(124 131 255 / .45),rgb(124 131 255 / .5));background:light-dark(rgb(255 255 255 / .4),rgb(21 27 51 / .36));cursor:pointer;transition:.18s; }
+.upload-zone.drag { background:light-dark(rgb(124 131 255 / .12),rgb(124 131 255 / .2));transform:scale(.995); }
+.upload-icon { width:58px;height:58px;border-radius:20px;display:grid;place-items:center;background:linear-gradient(140deg,rgb(124 131 255 / .17),rgb(80 200 223 / .19));color:var(--accent);margin-bottom:15px; }
+.upload-icon svg { width:28px;height:28px; }
+.upload-zone h3 { margin:0;font-size:16px; }
+.upload-zone p { margin:8px 0 16px;max-width:430px;color:var(--muted);font-size:11px;line-height:1.6; }
+.upload-footnote { font-size:10px;color:var(--muted);line-height:1.6;margin-top:12px; }
+.import-layout { display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:15px; }
+.import-instructions { border-radius:23px;padding:20px; }
+.steps { display:grid;gap:14px;margin-top:17px; }
+.step { display:flex;gap:11px;align-items:flex-start; }
+.step-num { flex:none;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;background:light-dark(rgb(124 131 255 / .14),rgb(124 131 255 / .2));color:var(--accent);font-weight:800;font-size:11px; }
+.step strong { display:block;font-size:11px;margin:2px 0 4px; }
+.step p { margin:0;color:var(--muted);font-size:10px;line-height:1.55; }
+.form-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.form-field { display:grid;gap:6px; }
+.form-field.full { grid-column:1/-1; }
+.form-field label { color:var(--muted);font-size:10px;font-weight:750; }
+.field { width:100%;border:1px solid var(--line);background:var(--field);color:var(--ink);border-radius:12px;padding:11px 12px;font-size:12px;outline:none;min-width:0; }
+textarea.field { min-height:78px;resize:vertical; }
+.form-actions { display:flex;justify-content:flex-end;gap:9px;margin-top:16px; }
+.modal-backdrop { display:none;position:fixed;inset:0;z-index:10;background:rgb(9 14 30 / .40);backdrop-filter:blur(7px);padding:18px;align-items:center;justify-content:center; }
+.modal-backdrop.open { display:flex; }
+.modal { width:min(640px,100%);max-height:90vh;overflow:auto;border-radius:25px;padding:22px;background:var(--glass-strong);border:1px solid var(--line);box-shadow:0 24px 90px rgb(0 0 0 / .20); }
+.modal-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px; }
+.modal-head h2 { margin:0;font-size:19px;letter-spacing:-.5px; }
+.modal-head p { margin:6px 0 0;color:var(--muted);font-size:11px;line-height:1.5; }
+.close-btn { flex:none;border:1px solid var(--line);background:var(--glass);width:34px;height:34px;border-radius:12px;color:var(--ink);font-size:19px; }
+.parse-alert { border-radius:13px;padding:12px;font-size:11px;line-height:1.5;margin-bottom:14px; }
+.parse-alert.ok { background:light-dark(rgb(68 180 148 / .12),rgb(68 180 148 / .16));color:var(--good); }
+.parse-alert.warn { background:light-dark(rgb(237 176 73 / .13),rgb(237 176 73 / .16));color:var(--warn); }
+.competency-inputs { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px; }
+.competency-inputs .field { text-align:center;padding:10px 5px; }
+.competency-inputs label { text-align:center; }
+.toast { position:fixed;right:22px;bottom:22px;z-index:20;max-width:min(400px,calc(100vw - 44px));padding:13px 16px;border:1px solid var(--line);border-radius:16px;background:var(--glass-strong);box-shadow:var(--shadow);font-size:12px;display:none; }
+.toast.show { display:block;animation:fade .2s ease; }
+.toast strong { display:block;margin-bottom:3px; }
+.settings-card { border-radius:22px;padding:20px;margin-bottom:13px; }
+.settings-line { display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0;border-bottom:1px solid var(--line); }
+.settings-line:last-child { border-bottom:0;padding-bottom:0; }
+.settings-line:first-of-type { padding-top:0; }
+.settings-line strong { display:block;font-size:12px; }
+.settings-line p { margin:4px 0 0;color:var(--muted);font-size:10px;line-height:1.5; }
+.settings-actions { display:flex;gap:8px;flex-wrap:wrap; }
+.mobile-nav { display:none; }
+.footer-note { color:var(--muted);font-size:10px;margin-top:18px;text-align:center; }
+/* Competency palette requested for the interactive correction reader. */
+:root { --c1:#e34f63; --c2:#9771e8; --c3:#20b9b0; --c4:#e5b72e; --c5:#43a86b; }
+.competency-mark { border:0; border-radius:4px; padding:1px 2px; cursor:pointer; color:var(--ink); box-decoration-break:clone; -webkit-box-decoration-break:clone; outline-offset:2px; }
+.competency-mark.c1 { background:rgb(227 79 99 / .27); box-shadow:inset 0 -2px 0 var(--c1); }
+.competency-mark.c2 { background:rgb(151 113 232 / .25); box-shadow:inset 0 -2px 0 var(--c2); }
+.competency-mark.c3 { background:rgb(32 185 176 / .25); box-shadow:inset 0 -2px 0 var(--c3); }
+.competency-mark.c4 { background:rgb(229 183 46 / .28); box-shadow:inset 0 -2px 0 var(--c4); }
+.competency-mark.c5 { background:rgb(67 168 107 / .25); box-shadow:inset 0 -2px 0 var(--c5); }
+.competency-mark.selected { outline:2px solid currentColor; }
+.reader-layout { display:grid;grid-template-columns:minmax(0,1.15fr) minmax(300px,.85fr);gap:14px;align-items:start; }
+.reader-paper { padding:20px;border-radius:24px; }
+.reader-paper-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px; }
+.reader-essay-text { font-family:Georgia,'Times New Roman',serif; font-size:15px; line-height:2.05; white-space:pre-wrap; overflow-wrap:anywhere; }
+.reader-essay-text p { margin:0 0 17px; }
+.reader-comments { display:grid;gap:10px; }
+.comment-card { border:1px solid var(--line);border-radius:16px;padding:13px;background:light-dark(rgb(255 255 255 / .39),rgb(17 23 43 / .35));cursor:pointer;transition:.16s; }
+.comment-card:hover,.comment-card.selected { border-color:var(--accent);transform:translateY(-1px); }
+.comment-card-head { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px; }
+.comp-badge { display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:5px 7px;font-size:10px;font-weight:800; }
+.comp-badge.c1 { color:var(--c1);background:rgb(227 79 99 / .12); }
+.comp-badge.c2 { color:var(--c2);background:rgb(151 113 232 / .12); }
+.comp-badge.c3 { color:var(--c3);background:rgb(32 185 176 / .12); }
+.comp-badge.c4 { color:var(--c4);background:rgb(229 183 46 / .15); }
+.comp-badge.c5 { color:var(--c5);background:rgb(67 168 107 / .12); }
+.comment-quote { font-size:11px;font-weight:750;line-height:1.5;margin-bottom:7px; }
+.comment-copy { font-size:11px;color:var(--muted);line-height:1.6; }
+.comment-study { margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:10px;line-height:1.5; }
+.reader-legend { display:flex;gap:7px;flex-wrap:wrap;margin:0 0 15px; }
+.study-table { white-space:normal;min-width:650px; }
+.study-table td { vertical-align:top;line-height:1.55; }
+.study-table .error-title { font-weight:750; }
+.study-table .study-tip { color:var(--muted);margin-top:4px;font-size:10px; }
+.reader-score { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px; }
+.reader-score-big { font-size:27px;font-weight:800;letter-spacing:-.8px; }
+.reader-stats { display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:14px 0; }
+.reader-stat { border:1px solid var(--line);border-radius:12px;padding:10px;background:light-dark(rgb(255 255 255 / .35),rgb(14 20 39 / .33)); }
+.reader-stat small { display:block;color:var(--muted);font-size:9px;margin-bottom:5px; }
+.reader-stat strong { font-size:14px; }
+.code-preview { font-size:10px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;max-height:280px;overflow:auto;margin:12px 0 0; }
+@media(max-width:980px){.reader-layout{grid-template-columns:1fr}.reader-stats{grid-template-columns:repeat(5,minmax(0,1fr))}}
+@media(max-width:600px){.reader-paper{padding:14px}.reader-essay-text{font-size:14px;line-height:1.9}.reader-stats{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}.reader-stat{padding:7px 5px}.reader-stat small{font-size:8px}.reader-stat strong{font-size:12px}.study-table{min-width:580px}}
+@media (max-width:1100px) {
+ .shell { grid-template-columns:210px minmax(0,1fr);padding:16px;gap:16px; }
+ .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .content-grid { grid-template-columns:minmax(0,1.25fr) minmax(220px,.8fr); }
+ .panel { padding:17px; }
+ .comp-row { grid-template-columns:minmax(116px,1fr) minmax(85px,1.6fr) 52px;gap:9px; }
+}
+@media (max-width:780px) {
+ .shell { display:block;padding:14px 13px 85px; }
+ .sidebar { display:none; }
+ main { padding:3px 0 18px; }
+ .topbar { margin-bottom:18px;align-items:flex-start; }
+ .topbar h1 { font-size:28px; }
+ .top-actions { gap:7px; }
+ .top-actions .primary-btn { padding:12px 13px;font-size:11px; }
+ .top-actions .icon-btn { width:39px;height:39px; }
+ .top-subtitle { font-size:11px;max-width:280px;line-height:1.5; }
+ .metrics { gap:9px; }
+ .metric { padding:14px;border-radius:18px; }
+ .metric-value { font-size:26px; }
+ .content-grid,.lower-grid,.import-layout { grid-template-columns:1fr; }
+ .panel { border-radius:20px; }
+ .chart-wrap { height:190px; }
+ .competency-panel { margin-bottom:12px; }
+ .comp-row { grid-template-columns:minmax(112px,1fr) minmax(80px,1.2fr) 48px; }
+ .library-grid { grid-template-columns:1fr; }
+ .mobile-nav { position:fixed;display:flex;left:12px;right:12px;bottom:10px;z-index:5;justify-content:space-around;gap:4px;padding:8px;border-radius:22px; }
+ .mobile-nav .nav-btn { flex:1;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:5px;padding:8px 4px;font-size:9px; }
+ .mobile-nav .nav-btn svg { width:19px;height:19px; }
+ .demo-banner { align-items:flex-start;font-size:10px;line-height:1.5; }
+ .demo-banner button { padding:0; }
+ .section-toolbar { align-items:stretch;flex-direction:column; }
+ .search-input { width:100%; }
+ .form-grid { grid-template-columns:1fr; }
+ .form-field.full { grid-column:auto; }
+ .competency-inputs { gap:5px; }
+ .competency-inputs .field { font-size:11px; }
+ .modal { padding:17px; }
+}
+@media (max-width:390px) {
+ .top-actions .icon-btn { display:none; }
+ .metric-head { font-size:10px; }
+ .metric-icon { width:29px;height:29px; }
+ .comp-row { grid-template-columns:104px minmax(60px,1fr) 43px;gap:7px; }
+ .comp-name { font-size:10px; }
+ .comp-name small { font-size:9px; }
+}
+@media (prefers-reduced-motion:reduce) { * { animation:none!important;transition:none!important; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="ambient" aria-hidden="true"><div class="orb one"></div><div class="orb two"></div><div class="orb three"></div></div>
+  <div class="shell">
+    <aside class="sidebar glass">
+      <div class="brand"><div class="brand-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4.5h10.8A2.2 2.2 0 0 1 18 6.7V20l-3.2-2-3.1 2-3.2-2L5 20z"/><path d="M8 8h7M8 11h7M8 14h4"/></svg></div><div><div class="brand-name">escrita<span style="color:var(--accent)">.</span></div><div class="brand-caption">seu laboratório de redação</div></div></div>
+      <div class="nav-label">ESPAÇO DE ESTUDO</div>
+      <nav class="nav" aria-label="Navegação principal">
+        <button class="nav-btn active" data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Visão geral</button>
+        <button class="nav-btn" data-view="essays"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5M8 12h8M8 15.5h8M8 8.5h2"/></svg>Minhas redações</button>
+        <button class="nav-btn" data-view="skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5V13M10 19.5V5M16 19.5V9M22 19.5V3"/></svg>Competências</button>
+        <button class="nav-btn" data-view="study"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5h16v13H4z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>Erros &amp; estudo</button>
+        <button class="nav-btn" data-view="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V3m0 0L7.5 7.5M12 3l4.5 4.5"/><path d="M4 14v5.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Importar correção</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="nav-label">META PESSOAL</div>
+        <div class="goal-mini"><div class="goal-top"><span>Meta ENEM</span><span id="sideGoalScore">900 pts</span></div><div class="mini-track"><span id="sideGoalBar"></span></div><div class="goal-sub" id="sideGoalText">Sua jornada, um parágrafo de cada vez.</div></div>
+        <div class="local-note"><span></span> Seus dados ficam neste dispositivo</div>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div><div class="eyebrow" id="pageEyebrow">SEU PAINEL PESSOAL</div><h1 id="pageTitle">Sua evolução, <span style="background:linear-gradient(100deg,#8187ff,#50c8df);-webkit-background-clip:text;background-clip:text;color:transparent">em perspectiva.</span></h1><div class="top-subtitle" id="pageSubtitle">Cada redação é um passo a mais rumo à sua melhor versão.</div></div>
+        <div class="top-actions"><button class="icon-btn" id="exportBtn" title="Exportar histórico CSV" aria-label="Exportar histórico CSV"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5"/><path d="M4 16v4h16v-4"/></svg></button><button class="primary-btn" id="topImportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 15v5h16v-5"/></svg>Importar correção</button></div>
+      </header>
+      <div class="demo-banner" id="demoBanner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5h.01"/></svg><div><strong>Modo de demonstração.</strong> Os números e temas abaixo são exemplos fictícios para mostrar o visual. Importe suas correções para criar seu histórico real.</div><button id="clearDemo">Limpar exemplos ×</button></div>
+
+      <section class="view active" id="view-overview">
+        <div class="metrics">
+          <article class="metric glass"><div class="metric-head"><span>Nota mais recente</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m4 16 5-5 4 3 7-8"/><path d="M14 6h6v6"/></svg></span></div><div class="metric-value" id="metricLatest">760<span style="font-size:13px;color:var(--muted);font-weight:600">/1000</span></div><div class="metric-foot" id="metricLatestFoot"><span class="up">↑ 80 pts</span> no período demonstrativo</div></article>
+          <article class="metric glass"><div class="metric-head"><span>Média geral</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19h16M6 16v-5M11 16V5M16 16V8"/></svg></span></div><div class="metric-value" id="metricAverage">712</div><div class="metric-foot" id="metricAverageFoot">Com base nas redações registradas</div></article>
+          <article class="metric glass"><div class="metric-head"><span>Redações corrigidas</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3.5h10A2.5 2.5 0 0 1 19.5 6v14.5L16 18l-4 2.5L8 18l-3.5 2.5V6A2.5 2.5 0 0 1 7 3.5Z"/><path d="m8.5 11.5 2.2 2.2 4.8-5"/></svg></span></div><div class="metric-value" id="metricCount">5</div><div class="metric-foot" id="metricCountFoot">Redações salvas neste painel</div></article>
+          <article class="metric glass"><div class="metric-head"><span>Competência destaque</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg></span></div><div class="metric-value" id="metricBest">C2</div><div class="metric-foot" id="metricBestFoot">Compreensão do tema</div></article>
+        </div>
+        <div class="content-grid">
+          <article class="panel glass"><div class="panel-head"><div><div class="panel-title">Curva de evolução</div><div class="panel-description">Acompanhe suas notas ao longo das redações.</div></div><span class="pill"><span class="pill-dot"></span><span id="chartPeriod">Últimas redações</span></span></div><div class="chart-wrap"><svg id="progressChart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Gráfico de evolução da nota"></svg></div><div class="chart-legend"><span class="legend-dot"></span>Nota total <span style="margin-left:auto" id="chartRange">0–1000 pontos</span></div></article>
+          <article class="panel glass"><div class="panel-head"><div><div class="panel-title">Sua meta de nota</div><div class="panel-description">Um objetivo claro, progresso real.</div></div><span class="pill">ENEM</span></div><div class="donut-area"><div class="donut"><svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="donutGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8589ff"/><stop offset="100%" stop-color="#50c8df"/></linearGradient></defs><circle class="donut-bg" cx="60" cy="60" r="54"/><circle class="donut-value" id="donutValue" cx="60" cy="60" r="54"/></svg><div class="donut-center"><strong id="donutPercent">84%</strong><span>da sua meta</span></div></div></div><div class="goal-status" id="goalStatus">Você está no caminho!</div><div class="goal-progress"><div><strong id="goalCurrent">760 pts</strong><small>nota atual</small></div><div class="mini-track"><span id="goalBar" style="width:84%"></span></div><div><strong id="goalTarget">900</strong><small>meta</small></div></div><div style="margin-top:13px;text-align:right"><button class="text-link" id="editGoal">Editar meta →</button></div></article>
+        </div>
+        <article class="panel glass competency-panel"><div class="panel-head"><div><div class="panel-title">Mapa das competências</div><div class="panel-description">Veja onde sua escrita está mais forte e onde há espaço para evoluir.</div></div><button class="text-link" data-goto="skills">Ver análise completa →</button></div><div id="overviewComps" class="comp-list"></div></article>
+        <div class="lower-grid">
+          <article class="panel glass table-panel"><div class="panel-head"><div><div class="panel-title">Redações recentes</div><div class="panel-description">Uma visão rápida do seu percurso.</div></div><button class="text-link" data-goto="essays">Ver todas →</button></div><div class="table-wrap"><table><thead><tr><th>Tema / redação</th><th>Nota</th><th>Data</th><th>Status</th></tr></thead><tbody id="recentRows"></tbody></table></div></article>
+          <article class="panel glass"><div class="panel-head"><div><div class="panel-title">Pistas para evoluir</div><div class="panel-description">Insights calculados a partir das notas registradas.</div></div></div><div class="insight-list" id="insights"></div></article>
+        </div>
+      </section>
+
+      <section class="view" id="view-essays">
+        <div class="section-toolbar"><div><div class="panel-title">Biblioteca de redações</div><div class="panel-description">Cada correção vira parte do seu histórico de aprendizagem.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="search-input" id="essaySearch" placeholder="Buscar por tema…" aria-label="Buscar redações"><button class="secondary-btn" id="manualAddBtn">+ Importar código</button></div></div>
+        <div id="essayLibrary" class="library-grid"></div>
+      </section>
+
+      <section class="view" id="view-skills">
+        <article class="panel glass" style="margin-bottom:14px"><div class="panel-head"><div><div class="panel-title">Análise por competência</div><div class="panel-description">A comparação usa a média das notas importadas pelos arquivos estruturados de correção.</div></div><span class="pill">0–200 por competência</span></div><div id="skillsComps" class="comp-list"></div></article>
+        <div class="lower-grid"><article class="panel glass"><div class="panel-title">Como interpretar</div><div class="steps"><div class="step"><div class="step-num">1</div><div><strong>Compare com suas próprias notas</strong><p>Uma competência forte é uma base para manter; uma oscilação pode indicar um ponto para revisar.</p></div></div><div class="step"><div class="step-num">2</div><div><strong>Olhe a tendência, não apenas um resultado</strong><p>Uma sequência de redações dá uma visão mais confiável da evolução do que uma única nota.</p></div></div><div class="step"><div class="step-num">3</div><div><strong>Transforme o diagnóstico em ação</strong><p>Use os comentários da correção para escolher um objetivo concreto para a próxima redação.</p></div></div></div></article><article class="panel glass"><div class="panel-title">Sua competência mais forte</div><div id="strongSkillCard" style="margin-top:16px"></div><div class="panel-title" style="margin-top:22px">Maior espaço para crescer</div><div id="weakSkillCard" style="margin-top:12px"></div></article></div>
+      </section>
+
+      <section class="view" id="view-import">
+        <div class="import-layout"><div><div class="panel-title" style="margin:2px 0 7px">Importe o arquivo de correção</div><div class="panel-description" style="margin-bottom:17px">Agora, o histórico só é preenchido a partir do arquivo JSON estruturado que acompanha o PDF. Ele traz notas, redação original, marcações por competência, comentários e plano de estudo.</div>
+          <label class="upload-zone" id="uploadZone" for="correctionInput"><div class="upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V3m0 0L7.5 7.5M12 3l4.5 4.5"/><path d="M4 14v5.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V14"/></svg></div><h3>Solte o arquivo JSON aqui</h3><p>ou clique para selecionar o arquivo de dados da correção neste dispositivo.</p><span class="primary-btn" style="pointer-events:none">Escolher arquivo JSON</span><div class="upload-footnote">Formato .json · validação e leitura no navegador · sem serviço de IA externo</div><input type="file" id="correctionInput" accept="application/json,.json,text/json" hidden></label>
+          <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:13px"><button class="secondary-btn" id="showFormatBtn">Ver formato esperado</button><button class="secondary-btn" id="downloadTemplateBtn">Baixar modelo JSON</button></div>
+          <div id="importResult" style="margin-top:14px"></div>
+        </div><aside class="panel glass import-instructions"><div class="panel-title">Como funciona</div><div class="panel-description">O arquivo estruturado é a fonte de dados do painel; o PDF continua sendo a versão legível para estudar e consultar.</div><div class="steps"><div class="step"><div class="step-num">1</div><div><strong>Receba dois arquivos na correção</strong><p>Um PDF para leitura e um JSON com as informações organizadas para o painel.</p></div></div><div class="step"><div class="step-num">2</div><div><strong>Importe apenas o JSON</strong><p>O painel valida tema, pontuações, redação original e marcações. Não tenta inferir informações a partir do PDF.</p></div></div><div class="step"><div class="step-num">3</div><div><strong>Confira e confirme</strong><p>Depois de confirmar, os dados ficam salvos localmente, alimentam as estatísticas e abrem uma leitura interativa.</p></div></div></div><div style="height:1px;background:var(--line);margin:18px 0"></div><div class="panel-title" style="font-size:12px">Cores das competências</div><div class="reader-legend" style="margin-top:10px"><span class="comp-badge c1">C1 · vermelho</span><span class="comp-badge c2">C2 · roxo</span><span class="comp-badge c3">C3 · turquesa</span><span class="comp-badge c4">C4 · amarelo</span><span class="comp-badge c5">C5 · verde</span></div><p style="font-size:10px;line-height:1.6;color:var(--muted)">O site não contém uma IA própria. A análise e as marcações são preparadas no arquivo estruturado que eu gerar junto da correção; o site interpreta esse arquivo e exibe os dados.</p></aside></div>
+      </section>
+
+      <section class="view" id="view-study">
+        <article class="panel glass" style="margin-bottom:14px"><div class="panel-head"><div><div class="panel-title">Seus padrões de erro</div><div class="panel-description">Uma linha por competência: o padrão mais recorrente entre as correções estruturadas importadas e o que estudar para enfrentá-lo.</div></div><span class="pill">Histórico acumulado</span></div><div class="table-wrap"><table class="study-table"><thead><tr><th>Competência</th><th>Principal padrão</th><th>Recorrência</th><th>O que estudar / praticar</th></tr></thead><tbody id="studySummaryRows"></tbody></table></div></article>
+        <article class="panel glass"><div class="panel-head"><div><div class="panel-title">Plano de estudo prioritário</div><div class="panel-description">Ações extraídas dos arquivos de correção, organizadas para ajudar você a revisar um padrão por vez.</div></div></div><div class="insight-list" id="studyPlanList"></div></article>
+      </section>
+
+      <section class="view" id="view-reader">
+        <div class="section-toolbar"><div><div class="panel-title" id="readerThemeHeading">Leitura interativa</div><div class="panel-description" id="readerMeta">Leia a redação completa e clique nos trechos coloridos para abrir os comentários do corretor.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary-btn" id="readerBack">← Biblioteca</button><button class="secondary-btn" id="readerEdit">Editar dados</button></div></div>
+        <div class="reader-score" id="readerScore"></div>
+        <div class="reader-legend"><span class="comp-badge c1">C1 · norma-padrão</span><span class="comp-badge c2">C2 · tema/repertório</span><span class="comp-badge c3">C3 · argumentação</span><span class="comp-badge c4">C4 · coesão</span><span class="comp-badge c5">C5 · intervenção</span></div>
+        <div class="reader-layout"><article class="reader-paper glass"><div class="reader-paper-head"><div><div class="panel-title">Sua redação</div><div class="panel-description">Clique em qualquer trecho destacado para ler a observação correspondente.</div></div><span class="pill" id="annotationCountPill">0 marcações</span></div><div class="reader-essay-text" id="readerEssayText"></div></article><aside class="panel glass"><div class="panel-head"><div><div class="panel-title">Comentários do corretor</div><div class="panel-description">Cada comentário está ligado ao trecho marcado no texto.</div></div></div><div id="readerComments" class="reader-comments"></div></aside></div>
+        <article class="panel glass" style="margin-top:14px"><div class="panel-head"><div><div class="panel-title">Diagnóstico por competência</div><div class="panel-description">Os principais padrões e as sugestões de estudo desta redação.</div></div></div><div class="table-wrap"><table class="study-table"><thead><tr><th>Competência</th><th>Nota</th><th>Principal erro</th><th>Estudo recomendado</th></tr></thead><tbody id="readerErrorRows"></tbody></table></div><div id="readerFeedback" class="panel-description" style="margin-top:14px"></div></article>
+      </section>
+
+      <section class="view" id="view-settings">
+        <article class="settings-card glass"><div class="panel-title">Preferências do painel</div><div class="panel-description" style="margin-bottom:18px">Ajuste sua meta e controle seus dados locais.</div><div class="settings-line"><div><strong>Meta de nota</strong><p>Nota total que você quer alcançar no ENEM.</p></div><div style="display:flex;gap:8px;align-items:center"><input id="settingsGoal" class="field" type="number" min="0" max="1000" step="10" style="width:100px"><button class="secondary-btn" id="saveGoal">Salvar</button></div></div><div class="settings-line"><div><strong>Exportar histórico</strong><p>Baixe suas redações registradas em uma planilha CSV.</p></div><button class="secondary-btn" id="settingsExport">Exportar CSV</button></div><div class="settings-line"><div><strong>Limpar dados locais</strong><p>Apaga as redações salvas neste navegador e restaura os exemplos.</p></div><button class="secondary-btn" id="resetData">Restaurar exemplos</button></div></article>
+        <article class="settings-card glass"><div class="panel-title">Privacidade e limites</div><div class="settings-line"><div><strong>Armazenamento</strong><p>As redações são guardadas no armazenamento local do navegador deste dispositivo.</p></div><span class="pill">Local</span></div><div class="settings-line"><div><strong>Leitura do arquivo estruturado</strong><p>O painel importa arquivos JSON estruturados gerados junto da correção. Não usa uma IA própria nem extrai dados do PDF.</p></div><span class="pill">Experimental</span></div><div class="settings-line"><div><strong>Interpretação da correção</strong><p>Se os comentários da correção estiverem em texto, eles não substituem o julgamento do corretor: confira a nota e os dados extraídos.</p></div><span class="pill">Revisão</span></div></article>
+      </section>
+      <div class="footer-note">Feito para acompanhar sua escrita com calma. Os dados deste painel são seus.</div>
+    </main>
+  </div>
+  <nav class="mobile-nav glass" aria-label="Navegação inferior"><button class="nav-btn active" data-view="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>Início</button><button class="nav-btn" data-view="essays"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5v5h5M8 12h8M8 15.5h8"/></svg>Redações</button><button class="nav-btn" data-view="skills"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5V13M10 19.5V5M16 19.5V9M22 19.5V3"/></svg>Notas</button><button class="nav-btn" data-view="study"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5.5h16v13H4z"/><path d="M8 9h8M8 12h8M8 15h5"/></svg>Estudo</button><button class="nav-btn" data-view="import"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V3m0 0L7.5 7.5M12 3l4.5 4.5"/><path d="M4 14v5.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V14"/></svg>Importar</button><button class="nav-btn" data-view="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.3 1-1.5 2.6-1.6-.6a8 8 0 0 1-1.6.9l-.3 1.7h-3l-.3-1.7a8 8 0 0 1-1.6-.9l-1.6.6-1.5-2.6 1.3-1a7 7 0 0 1 0-1.9l-1.3-1L7.3 9.5l1.6.6a8 8 0 0 1 1.6-.9l.3-1.7h3l.3 1.7a8 8 0 0 1 1.6.9l1.6-.6 1.5 2.6-1.3 1a7 7 0 0 1 0 1.9Z"/></svg>Ajustes</button></nav>
+</div>
+
+<div class="modal-backdrop" id="essayModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal"><div class="modal-head"><div><h2 id="modalTitle">Adicionar redação</h2><p id="modalSubtitle">Preencha as informações. Você poderá revisar seus dados antes de salvar.</p></div><button class="close-btn" id="closeModal" aria-label="Fechar">×</button></div><div id="modalAlert"></div><form id="essayForm"><div class="form-grid"><div class="form-field full"><label for="fTheme">Tema da redação</label><input id="fTheme" class="field" required maxlength="220" placeholder="Ex.: Desafios para…"></div><div class="form-field"><label for="fDate">Data da correção</label><input id="fDate" class="field" type="date" required></div><div class="form-field"><label for="fScore">Nota total (0–1000)</label><input id="fScore" class="field" type="number" min="0" max="1000" step="1" required placeholder="760"></div><div class="form-field full"><label>Pontuação por competência (0–200)</label><div class="competency-inputs"><div class="form-field"><label for="fC1">C1</label><input id="fC1" class="field" type="number" min="0" max="200" step="40" placeholder="160"></div><div class="form-field"><label for="fC2">C2</label><input id="fC2" class="field" type="number" min="0" max="200" step="40" placeholder="160"></div><div class="form-field"><label for="fC3">C3</label><input id="fC3" class="field" type="number" min="0" max="200" step="40" placeholder="160"></div><div class="form-field"><label for="fC4">C4</label><input id="fC4" class="field" type="number" min="0" max="200" step="40" placeholder="160"></div><div class="form-field"><label for="fC5">C5</label><input id="fC5" class="field" type="number" min="0" max="200" step="40" placeholder="160"></div></div><div style="font-size:10px;color:var(--muted);margin-top:6px">Se não souber as pontuações, deixe em branco. A soma das competências não será presumida como nota total.</div></div><div class="form-field full"><label for="fNotes">Observações da correção (opcional)</label><textarea id="fNotes" class="field" placeholder="Pontos fortes, aspectos a melhorar, comentários do corretor…"></textarea></div><div class="form-field full"><label for="fSource">Origem</label><select id="fSource" class="field"><option value="manual">Preenchimento manual</option><option value="json">Arquivo de correção estruturado (JSON)</option></select></div></div><div class="form-actions"><button type="button" class="secondary-btn" id="cancelModal">Cancelar</button><button type="submit" class="primary-btn">Salvar no histórico</button></div></form></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><strong id="toastTitle">Pronto</strong><span id="toastMessage"></span></div>
+<script>
+(() => {
+'use strict';
+const COMP_NAMES = ['Domínio da modalidade escrita','Compreensão do tema','Seleção e organização dos argumentos','Mecanismos linguísticos de coesão','Proposta de intervenção'];
+const COMP_SHORT = ['C1','C2','C3','C4','C5'];
+const SAMPLE = [
+ {id:'s1',theme:'Desafios para a valorização da herança africana no Brasil',date:'2026-09-25',score:680,comps:[160,160,120,120,120],notes:'Exemplo: ampliar a análise crítica dos repertórios e aprofundar a relação entre argumento e tese.',source:'sample'},
+ {id:'s2',theme:'A democratização do acesso à cultura no Brasil',date:'2026-09-29',score:720,comps:[160,160,160,120,120],notes:'Exemplo: observar a progressão entre os períodos e detalhar melhor a proposta de intervenção.',source:'sample'},
+ {id:'s3',theme:'Desafios para combater a desinformação digital',date:'2026-10-03',score:680,comps:[120,160,120,160,120],notes:'Exemplo: revisar aspectos da norma-padrão e selecionar evidências mais específicas.',source:'sample'},
+ {id:'s4',theme:'O papel do esporte na promoção da saúde',date:'2026-10-08',score:720,comps:[160,160,120,160,120],notes:'Exemplo: desenvolver melhor a explicação causal dos argumentos.',source:'sample'},
+ {id:'s5',theme:'Desafios da inclusão social no Brasil',date:'2026-10-14',score:760,comps:[160,180,140,140,140],notes:'Exemplo: manter a boa leitura do tema e tornar os encadeamentos argumentativos mais precisos.',source:'sample'}
+];
+const $ = id => document.getElementById(id);
+let essays = loadData();
+let goal = loadGoal();
+let pendingImport = null;
+let editingId = null;
+function loadData(){try{const x=JSON.parse(localStorage.getItem('escrita_essays_v1'));return Array.isArray(x)?x:SAMPLE.map(x=>({...x}));}catch(e){return SAMPLE.map(x=>({...x}));}}
+function loadGoal(){try{const g=Number(localStorage.getItem('escrita_goal_v1'));return g>=0&&g<=1000?g:900;}catch(e){return 900;}}
+function saveData(){try{localStorage.setItem('escrita_essays_v1',JSON.stringify(essays));}catch(e){toast('Não foi possível salvar','O navegador pode estar bloqueando o armazenamento local. Exporte o CSV para guardar uma cópia.');}}
+function saveGoalLocal(){try{localStorage.setItem('escrita_goal_v1',String(goal));}catch(e){}}
+function isSampleOnly(){return essays.length>0&&essays.every(e=>e.source==='sample');}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmtDate(s){if(!s)return 'Data não informada';const d=new Date(s+'T12:00:00');return Number.isNaN(d.getTime())?s:d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}).replace('.','');}
+function averageScore(){return essays.length?Math.round(essays.reduce((s,e)=>s+Number(e.score||0),0)/essays.length):0;}
+function latestEssay(){return [...essays].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]||null;}
+function skillAvgs(){return COMP_NAMES.map((name,i)=>{const vals=essays.map(e=>Array.isArray(e.comps)?e.comps[i]:null).filter(v=>Number.isFinite(v));return {name,short:COMP_SHORT[i],avg:vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null,detail:COMP_NAMES[i]};});}
+function bestSkill(){const vals=skillAvgs().filter(x=>x.avg!==null);return vals.sort((a,b)=>b.avg-a.avg)[0]||null;}
+function worstSkill(){const vals=skillAvgs().filter(x=>x.avg!==null);return vals.sort((a,b)=>a.avg-b.avg)[0]||null;}
+function svgIcon(name){const icons={good:'<path d="m5 12 4 4L19 6"/>',warn:'<path d="M12 8v4m0 4h.01"/><path d="M10.3 3.9 2.8 17a2 2 0 0 0 1.8 3h14.8a2 2 0 0 0 1.8-3l-7.5-13.1a2 2 0 0 0-3.4 0Z"/>',book:'<path d="M5 4h13v16H5zM8 8h7M8 12h7M8 16h4"/>'};return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name]||icons.book}</svg>`;}
+function render(){renderMetrics();renderChart();renderCompetencies();renderRecent();renderInsights();renderLibrary();renderSettings();renderStudy();$('demoBanner').style.display=isSampleOnly()?'flex':'none';}
+function renderMetrics(){const latest=latestEssay(),best=bestSkill();$('metricLatest').innerHTML=latest?`${Number(latest.score)||0}<span style="font-size:13px;color:var(--muted);font-weight:600">/1000</span>`:'—';$('metricLatestFoot').innerHTML=latest?(isSampleOnly()?'<span class="up">Exemplo</span> · dado ilustrativo':'Última correção em '+esc(fmtDate(latest.date))):'Importe uma correção para começar';$('metricAverage').textContent=essays.length?averageScore():'—';$('metricAverageFoot').textContent=essays.length?(isSampleOnly()?'Média ilustrativa':'Média das '+essays.length+' redações registradas'):'Sem notas registradas';$('metricCount').textContent=essays.length;$('metricCountFoot').textContent=isSampleOnly()?'Exemplos fictícios, não seus resultados':essays.length+' redação(ões) salvas';$('metricBest').textContent=best?best.short:'—';$('metricBestFoot').textContent=best?best.name:'Importe as pontuações por competência';const cur=latest?Number(latest.score)||0:0;const pct=goal>0?Math.min(100,Math.round(cur/goal*100)):0;$('donutPercent').textContent=pct+'%';$('donutValue').style.strokeDasharray=`${339*pct/100} 339`;$('goalCurrent').textContent=latest?cur+' pts':'—';$('goalTarget').textContent=goal;$('goalBar').style.width=pct+'%';$('sideGoalScore').textContent=goal+' pts';$('sideGoalBar').style.width=pct+'%';$('sideGoalText').textContent=latest?`Última nota: ${cur} · ${pct}% da meta`:'Importe uma correção para acompanhar';$('goalStatus').textContent=!latest?'Sua jornada começa com a primeira redação.':cur>=goal?'Meta alcançada. Celebre sua evolução!':pct>=85?'Você está chegando perto da meta!':'Continue construindo sua evolução.';}
+function renderChart(){const svg=$('progressChart');if(!essays.length){svg.innerHTML='<text x="300" y="105" text-anchor="middle" class="chart-label">Importe os arquivos JSON de correção para ver a evolução</text>';return;}const rows=[...essays].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).slice(-8);const W=600,H=220,L=38,R=15,T=15,B=28,innerW=W-L-R,innerH=H-T-B;let html='';[0,250,500,750,1000].forEach(v=>{const y=T+innerH-(v/1000)*innerH;html+=`<line class="chart-grid" x1="${L}" y1="${y}" x2="${W-R}" y2="${y}"/><text class="chart-label" x="${L-8}" y="${y+3}" text-anchor="end">${v}</text>`;});const pts=rows.map((e,i)=>({x:rows.length===1?L+innerW/2:L+i*innerW/(rows.length-1),y:T+innerH-(Math.max(0,Math.min(1000,Number(e.score)||0))/1000)*innerH,e}));if(pts.length>1){const d=pts.map((p,i)=>(i?'L':'M')+p.x.toFixed(2)+' '+p.y.toFixed(2)).join(' ');html+=`<defs><linearGradient id="lineFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8589ff" stop-opacity=".23"/><stop offset="100%" stop-color="#8589ff" stop-opacity="0"/></linearGradient></defs><path d="${d} L ${pts[pts.length-1].x} ${T+innerH} L ${pts[0].x} ${T+innerH} Z" fill="url(#lineFill)"/><path class="chart-line" d="${d}"/>`;}pts.forEach((p,i)=>{html+=`<circle class="chart-point" cx="${p.x}" cy="${p.y}" r="4.5"><title>${esc(p.e.theme)}: ${p.e.score} pontos</title></circle><text class="chart-label" x="${p.x}" y="${H-7}" text-anchor="middle">${esc(i===pts.length-1?'Atual':String(i+1).padStart(2,'0'))}</text>`;});svg.innerHTML=html;$('chartRange').textContent=`${Math.min(...rows.map(e=>Number(e.score)||0))}–${Math.max(...rows.map(e=>Number(e.score)||0))} pontos`;}
+function compHtml(c){const color={C1:'var(--c1)',C2:'var(--c2)',C3:'var(--c3)',C4:'var(--c4)',C5:'var(--c5)'}[c.short]||'var(--accent)';return `<div class="comp-row"><div class="comp-name">${esc(c.short)} · ${esc(c.name)}<small>${c.avg===null?'Sem dados importados':c.avg>=160?'Desempenho sólido':c.avg>=120?'Em desenvolvimento':'Prioridade de estudo'}</small></div><div class="comp-track"><div class="comp-fill" style="width:${c.avg===null?0:Math.max(0,Math.min(100,c.avg/2))}%;background:${color}"></div></div><div class="comp-score">${c.avg===null?'—':c.avg}<small>/200</small></div></div>`;}
+function renderCompetencies(){const comps=skillAvgs();$('overviewComps').innerHTML=comps.map(compHtml).join('');$('skillsComps').innerHTML=comps.map(compHtml).join('');const best=bestSkill(),worst=worstSkill();$('strongSkillCard').innerHTML=best?`<div class="insight"><div class="insight-icon">${svgIcon('good')}</div><div><strong>${esc(best.short)} · ${esc(best.name)}</strong><p>Média de ${best.avg}/200 nas pontuações disponíveis. Preserve o que está funcionando e mantenha a consistência.</p></div></div>`:'<p class="panel-description">Adicione as competências das suas correções para identificar seu ponto forte.</p>';$('weakSkillCard').innerHTML=worst?`<div class="insight"><div class="insight-icon attention">${svgIcon('warn')}</div><div><strong>${esc(worst.short)} · ${esc(worst.name)}</strong><p>Média de ${worst.avg}/200. Revise os comentários do corretor e escolha uma ação prática para a próxima redação.</p></div></div>`:'<p class="panel-description">As pontuações por competência vão revelar áreas de atenção.</p>';}
+function renderRecent(){const rows=[...essays].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,4);$('recentRows').innerHTML=rows.length?rows.map(e=>`<tr><td class="topic-cell"><div class="topic-name">${esc(e.theme)}</div><div class="topic-date">${esc(e.source==='sample'?'Exemplo demonstrativo':fmtDate(e.date))}</div></td><td><span class="score-chip">${Number(e.score)||0}</span></td><td>${esc(fmtDate(e.date))}</td><td><span class="status">Registrada</span></td></tr>`).join(''):'<tr><td colspan="4"><div class="empty-state">Nenhuma redação ainda. Importe o JSON que acompanha sua correção para começar.</div></td></tr>';}
+function renderInsights(){const box=$('insights');if(!essays.length){box.innerHTML=`<div class="insight"><div class="insight-icon">${svgIcon('book')}</div><div><strong>Seu primeiro insight está por vir</strong><p>Depois de importar correções com notas e competências, o painel destacará tendências nos dados registrados.</p></div></div>`;return;}const latest=latestEssay(),best=bestSkill(),worst=worstSkill();const list=[];if(best)list.push({icon:'good',title:`Seu destaque é ${best.short}`,text:`Média de ${best.avg}/200 em ${best.name.toLowerCase()}. Continue praticando para manter a consistência.`});if(worst)list.push({icon:'warn',title:`Atenção a ${worst.short}`,text:`Média de ${worst.avg}/200 em ${worst.name.toLowerCase()}. Use os comentários das correções para definir um foco.`});if(essays.length>1){const sorted=[...essays].sort((a,b)=>(a.date||'').localeCompare(b.date||''));const first=Number(sorted[0].score)||0,last=Number(sorted[sorted.length-1].score)||0;list.push({icon:last>=first?'good':'warn',title:last>=first?'Sua última nota está acima da primeira':'Compare o que mudou no percurso',text:`Diferença entre a primeira e a última nota registrada: ${last-first>0?'+':''}${last-first} pontos. Isso não substitui a análise dos textos.`});}box.innerHTML=list.slice(0,3).map(x=>`<div class="insight"><div class="insight-icon ${x.icon==='warn'?'attention':''}">${svgIcon(x.icon)}</div><div><strong>${esc(x.title)}</strong><p>${esc(x.text)}${isSampleOnly()?' (exemplos fictícios)':''}</p></div></div>`).join('');}
+function renderLibrary(){const q=($('essaySearch').value||'').trim().toLocaleLowerCase('pt-BR');const rows=[...essays].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).filter(e=>e.theme.toLocaleLowerCase('pt-BR').includes(q));$('essayLibrary').innerHTML=rows.length?rows.map(e=>`<article class="essay-card glass"><div class="essay-card-top"><div><h3>${esc(e.theme)}</h3><p>${esc(fmtDate(e.date))}${e.source==='sample'?' · exemplo demonstrativo':''}</p></div><div class="essay-card-score">${Number(e.score)||0}<span style="font-size:10px;color:var(--muted);font-weight:600">/1000</span></div></div><div class="essay-card-footer"><span>${Array.isArray(e.comps)&&e.comps.some(Number.isFinite)?'Pontuações por competência disponíveis':'Sem pontuação por competência'}</span><button class="text-link" data-detail="${esc(e.id)}">Ver detalhes →</button></div></article>`).join(''):'<div class="panel glass empty-state" style="grid-column:1/-1">'+svgIcon('book')+'<strong>Nenhuma redação encontrada</strong>Importe um arquivo JSON de correção ou ajuste sua busca.</div>';$('essayLibrary').querySelectorAll('[data-detail]').forEach(b=>b.addEventListener('click',()=>showEssay(b.dataset.detail)));}
+function renderSettings(){$('settingsGoal').value=goal;}
+function setView(name){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id==='view-'+name));document.querySelectorAll('.nav-btn[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));const titles={overview:['SEU PAINEL PESSOAL','Sua evolução, em perspectiva.','Cada redação é um passo a mais rumo à sua melhor versão.'],essays:['SEU ARQUIVO','Sua biblioteca de redações.','Reúna suas correções e acompanhe sua jornada.'],skills:['ANÁLISE DE DESEMPENHO','Entenda suas competências.','Transforme notas em próximos passos de estudo.'],study:['PLANO DE ESTUDO','Seus erros viram prioridades.','Veja os padrões recorrentes e o que praticar para melhorar.'],reader:['LEITURA INTERATIVA','Sua redação, trecho por trecho.','Clique nas marcações coloridas para consultar os comentários.'],import:['IMPORTAÇÃO DE CORREÇÕES','Traga sua correção para cá.','Importe o JSON estruturado que acompanha seu PDF.'],settings:['CONFIGURAÇÕES','Seu painel, do seu jeito.','Controle sua meta e seus dados locais.']};const t=titles[name]||titles.overview;$('pageEyebrow').textContent=t[0];$('pageTitle').textContent=t[1];$('pageSubtitle').textContent=t[2];window.scrollTo({top:0,behavior:'smooth'});}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.view)));document.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>setView(b.dataset.goto)));
+function toast(title,message){$('toastTitle').textContent=title;$('toastMessage').textContent=message;$('toast').classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('show'),4200);}
+function openModal(data={},fromPdf=false){editingId=null;$('essayForm').reset();$('fDate').value=data.date||new Date().toISOString().slice(0,10);$('fTheme').value=data.theme||'';$('fScore').value=data.score??'';['C1','C2','C3','C4','C5'].forEach((c,i)=>$('f'+c).value=Array.isArray(data.comps)&&Number.isFinite(data.comps[i])?data.comps[i]:'');$('fNotes').value=data.notes||'';$('fSource').value=data.source==='json'?'json':(data.source==='pdf'?'json':'manual');$('modalTitle').textContent=fromPdf?'Editar dados da correção':'Adicionar redação';$('modalSubtitle').textContent=fromPdf?'Você está editando os metadados deste registro; o texto e os comentários estruturados serão preservados.':'Preencha os metadados de uma redação já registrada.';$('modalAlert').innerHTML=fromPdf?'<div class="parse-alert ok">Os dados do texto e as marcações são preservados ao editar apenas estes campos.</div>':'';$('essayModal').classList.add('open');setTimeout(()=>$('fTheme').focus(),50);}
+function closeModal(){$('essayModal').classList.remove('open');}
+$('closeModal').addEventListener('click',closeModal);$('cancelModal').addEventListener('click',closeModal);$('essayModal').addEventListener('click',e=>{if(e.target===$('essayModal'))closeModal();});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
+$('topImportBtn').addEventListener('click',()=>{setView('import');$('correctionInput').click();});$('manualAddBtn').addEventListener('click',()=>{setView('import');$('correctionInput').click();});$('editGoal').addEventListener('click',()=>{setView('settings');$('settingsGoal').focus();});
+$('essayForm').addEventListener('submit',e=>{e.preventDefault();const vals=['C1','C2','C3','C4','C5'].map(c=>{const v=$('f'+c).value;return v===''?null:Number(v);});const previous=editingId?essays.find(x=>x.id===editingId)||{}:{};const entry={...previous,id:editingId||previous.id||'e'+Date.now().toString(36),theme:$('fTheme').value.trim(),date:$('fDate').value,score:Number($('fScore').value),comps:vals,notes:$('fNotes').value.trim(),source:$('fSource').value==='json'?'json':($('fSource').value==='pdf'?'json':'manual')};if(!entry.theme||!entry.date||!Number.isFinite(entry.score)||entry.score<0||entry.score>1000){toast('Confira os campos','Informe tema, data e uma nota de 0 a 1000.');return;}if(vals.some(v=>v!==null&&(!Number.isFinite(v)||v<0||v>200))){toast('Confira as competências','Cada pontuação deve estar entre 0 e 200.');return;}if(editingId){const old=essays.find(x=>x.id===editingId);if(old&&old.source==='sample')essays=essays.filter(x=>x.source!=='sample'&&x.id!==editingId);const idx=essays.findIndex(x=>x.id===editingId);if(idx>=0){entry.id=editingId;essays[idx]=entry;}else{entry.id=editingId;essays.push(entry);}}else{if(isSampleOnly())essays=[];essays.push(entry);}editingId=null;saveData();render();closeModal();setView('essays');toast('Redação salva','A correção foi adicionada ao seu histórico local.');});
+$('essaySearch').addEventListener('input',renderLibrary);$('clearDemo').addEventListener('click',()=>{if(!isSampleOnly())return;essays=[];saveData();render();toast('Exemplos removidos','Importe um PDF ou adicione uma redação para começar.');});
+$('saveGoal').addEventListener('click',()=>{const v=Number($('settingsGoal').value);if(!Number.isFinite(v)||v<0||v>1000){toast('Meta inválida','Escolha um valor entre 0 e 1000.');return;}goal=Math.round(v);saveGoalLocal();render();toast('Meta atualizada','Sua meta pessoal foi salva neste dispositivo.');});$('resetData').addEventListener('click',()=>{if(!confirm('Apagar as redações salvas neste navegador e restaurar os exemplos?'))return;essays=SAMPLE.map(x=>({...x}));goal=900;saveData();saveGoalLocal();render();setView('overview');toast('Painel restaurado','Os exemplos demonstrativos foram restaurados.');});$('exportBtn').addEventListener('click',exportCsv);$('settingsExport').addEventListener('click',exportCsv);
+function exportCsv(){if(!essays.length){toast('Sem dados','Adicione uma redação antes de exportar.');return;}const header=['Tema','Data','Nota total','C1','C2','C3','C4','C5','Observações','Origem'];const rows=essays.map(e=>[e.theme,e.date,e.score,...(e.comps||[null,null,null,null,null]),e.notes,e.source]);const csv='\uFEFF'+[header,...rows].map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');downloadBlob(csv,'historico_redacoes.csv','text/csv;charset=utf-8');toast('Exportação iniciada','Seu arquivo CSV está pronto para baixar.');}
+function downloadBlob(content,name,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+function normalizeCorrection(raw){
+  const root=raw && raw.correction ? raw.correction : raw;
+  if(!root || typeof root!=='object') throw new Error('O arquivo não contém um objeto de correção.');
+  const format=raw && raw.format;
+  if(format && format!=='escrita.correction') throw new Error('Formato desconhecido. Esperava “escrita.correction”.');
+  const theme=String(root.theme||'').trim();
+  const textValue=String(root.text||root.essayText||'');
+  if(!theme) throw new Error('O tema da redação está ausente.');
+  if(textValue.trim().length<30) throw new Error('O texto integral da redação está ausente ou curto demais.');
+  const comps=COMP_SHORT.map((key,i)=>{
+    const value=root.competencies?.[key]?.score ?? (Array.isArray(root.comps)?root.comps[i]:null);
+    const v=value===null||value===undefined||value===''?null:Number(value);
+    if(v!==null&&(!Number.isFinite(v)||v<0||v>200)) throw new Error(`Pontuação ${key} inválida; use um valor entre 0 e 200.`);
+    return v;
+  });
+  if(comps.some(v=>v===null)) throw new Error('O arquivo deve incluir as cinco pontuações C1–C5.');
+  const score=Number(root.score);
+  if(!Number.isFinite(score)||score<0||score>1000) throw new Error('A nota total precisa estar entre 0 e 1000.');
+  const sum=comps.reduce((a,b)=>a+b,0);
+  if(Math.abs(sum-score)>80) throw new Error(`A soma das competências (${sum}) não coincide com a nota total (${score}). Confira o arquivo.`);
+  const sourceAnnotations=Array.isArray(root.annotations)?root.annotations:[];
+  const annotations=sourceAnnotations.map((a,i)=>{
+    const competency=String(a.competency||a.comp||'').toUpperCase();
+    if(!COMP_SHORT.includes(competency)) throw new Error(`A marcação ${i+1} não contém uma competência C1–C5 válida.`);
+    let start=Number(a.start),end=Number(a.end);const quote=String(a.quote||'');
+    if(!Number.isInteger(start)||!Number.isInteger(end)||start<0||end<=start||textValue.slice(start,end)!==quote){
+      start=quote?textValue.indexOf(quote):-1;end=start>=0?start+quote.length:-1;
+    }
+    if(start<0||end<=start||textValue.slice(start,end)!==quote) throw new Error(`Não encontrei o trecho da marcação ${i+1} dentro do texto. Gere o arquivo com o trecho e os índices correspondentes.`);
+    return {id:String(a.id||`mark-${i+1}`),start,end,quote,competency,category:String(a.category||'Observação'),comment:String(a.comment||''),studySuggestion:String(a.studySuggestion||a.suggestion||'')};
+  }).sort((a,b)=>a.start-b.start);
+  for(let i=1;i<annotations.length;i++){if(annotations[i].start<annotations[i-1].end) throw new Error('Duas marcações se sobrepõem. Ajuste os trechos destacados no arquivo JSON.');}
+  const errorSummary=Array.isArray(root.errorSummary)?root.errorSummary.map((x,i)=>({competency:String(x.competency||'').toUpperCase(),mainError:String(x.mainError||x.error||''),count:Number(x.count||1),study:String(x.study||x.whatToStudy||''),practice:String(x.practice||x.exercise||'')})).filter(x=>COMP_SHORT.includes(x.competency)):[];
+  const errorComps=new Set(errorSummary.map(x=>x.competency));
+  if(COMP_SHORT.some(c=>!errorComps.has(c))) throw new Error('O arquivo precisa trazer um resumo de erro e estudo para cada competência C1–C5.');
+  const id=String(root.id||`${slug(theme)}-${root.date||new Date().toISOString().slice(0,10)}`);
+  const dateValue=/^\d{4}-\d{2}-\d{2}$/.test(String(root.date||''))?String(root.date):new Date().toISOString().slice(0,10);
+  return {id,theme,date:dateValue,score,comps,notes:String(root.overallFeedback||root.notes||''),source:'json',text:textValue,annotations,errorSummary,
+    strengths:Array.isArray(root.strengths)?root.strengths.map(String):[],
+    studyPlan:Array.isArray(root.studyPlan)?root.studyPlan:[], sourceFile:String(root.sourceReport||''), importFormat:'escrita.correction/v1'};
+}
+function slug(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,55)||'redacao';}
+function previewCorrections(rows,fileName){
+  pendingImport={rows,fileName};
+  const summaries=rows.map((e,i)=>`<div style="border:1px solid var(--line);border-radius:15px;padding:13px;background:var(--field);margin-bottom:9px"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px"><div><div style="font-weight:750;font-size:12px">${esc(e.theme)}</div><div style="color:var(--muted);font-size:10px;margin-top:4px">${esc(fmtDate(e.date))} · ${e.annotations.length} marcações · texto integral incluído</div></div><div style="font-size:20px;font-weight:800;color:var(--accent)">${e.score}<small style="font-size:9px;color:var(--muted)">/1000</small></div></div><div class="reader-stats">${e.comps.map((v,j)=>`<div class="reader-stat"><small>${COMP_SHORT[j]}</small><strong style="color:${['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'][j]}">${v}</strong></div>`).join('')}</div><div style="font-size:10px;color:var(--muted)">5 resumos de erro/estudo · ${e.errorSummary.length} entradas de diagnóstico${i===0&&rows.length>1?'':' '}</div></div>`).join('');
+  $('importResult').innerHTML=`<article class="panel glass"><div class="panel-head"><div><div class="panel-title">Prévia do arquivo estruturado</div><div class="panel-description">${esc(fileName)} · ${rows.length} correção(ões) validada(s)</div></div><span class="pill"><span class="pill-dot"></span>Formato válido</span></div><div class="parse-alert ok">O site reconheceu o esquema, a nota, C1–C5, o texto original, as marcações interativas e os planos de estudo. Confira antes de salvar.</div>${summaries}<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="primary-btn" id="confirmStructured">Salvar ${rows.length===1?'correção':'correções'} no histórico</button><button class="secondary-btn" id="peekJson">Ver conteúdo JSON</button><button class="secondary-btn" id="discardStructured">Cancelar</button></div><pre id="jsonPeek" class="code-preview" style="display:none"></pre></article>`;
+  $('confirmStructured').addEventListener('click',saveStructuredImport);
+  $('peekJson').addEventListener('click',()=>{const el=$('jsonPeek');el.style.display=el.style.display==='none'?'block':'none';if(el.style.display==='block')el.textContent=JSON.stringify({format:'escrita.correction',version:1,correction:rows[0]},null,2).slice(0,15000);});
+  $('discardStructured').addEventListener('click',()=>{$('importResult').innerHTML='';pendingImport=null;});
+}
+function saveStructuredImport(){if(!pendingImport)return;let added=0,updated=0;if(isSampleOnly())essays=[];for(const incoming of pendingImport.rows){const idx=essays.findIndex(e=>e.id===incoming.id||(e.theme===incoming.theme&&e.date===incoming.date&&e.source==='json'));if(idx>=0){essays[idx]={...essays[idx],...incoming};updated++;}else{essays.push(incoming);added++;}}saveData();const ids=pendingImport.rows.map(r=>r.id);pendingImport=null;render();$('importResult').innerHTML=`<article class="panel glass"><div class="parse-alert ok">${added} nova(s) correção(ões) adicionada(s)${updated?` e ${updated} atualizada(s)`:''}. Os dados foram salvos neste navegador.</div><button class="primary-btn" id="openImported">Abrir leitura interativa →</button></article>`;$('openImported').addEventListener('click',()=>{showEssay(ids[ids.length-1]);});toast('Correção salva','O histórico, os gráficos e o plano de estudo foram atualizados.');}
+async function handleCorrectionFile(file){if(!file)return;if(!/\.json$/i.test(file.name)&&file.type!=='application/json'&&file.type!=='text/json'){toast('Formato não aceito','Selecione o arquivo .json que acompanha a correção, não o PDF.');return;}setView('import');$('importResult').innerHTML=`<article class="panel glass"><div class="panel-title">Validando ${esc(file.name)}</div><div class="panel-description" style="margin-top:7px">Lendo os campos estruturados e verificando as marcações do texto…</div></article>`;try{const raw=JSON.parse(await file.text());const arr=Array.isArray(raw)?raw:(Array.isArray(raw.corrections)?raw.corrections:null);const rows=(arr||[raw]).map(r=>normalizeCorrection(r));previewCorrections(rows,file.name);}catch(err){$('importResult').innerHTML=`<article class="panel glass"><div class="parse-alert warn"><strong>Não foi possível importar o arquivo.</strong><br>${esc(err.message||'JSON inválido.')}</div><div class="panel-description">Importe o arquivo estruturado que acompanha a correção. O site não tentará extrair dados do PDF.</div><button class="secondary-btn" id="retryImport">Escolher outro arquivo</button></article>`;$('retryImport').addEventListener('click',()=>$('correctionInput').click());}}
+$('correctionInput').addEventListener('change',e=>{handleCorrectionFile(e.target.files[0]);e.target.value='';});
+const zone=$('uploadZone');zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag');});zone.addEventListener('dragleave',()=>zone.classList.remove('drag'));zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag');handleCorrectionFile(e.dataTransfer.files[0]);});
+$('showFormatBtn').addEventListener('click',()=>{const example={format:'escrita.correction',version:1,correction:{id:'id-unico-da-correcao',theme:'Tema da redação',date:'AAAA-MM-DD',score:680,competencies:{C1:{score:80},C2:{score:160},C3:{score:120},C4:{score:120},C5:{score:200}},text:'Texto integral exatamente como foi corrigido...',annotations:[{id:'a1',start:0,end:12,quote:'trecho exato',competency:'C1',category:'Construção sintática',comment:'Comentário da correção',studySuggestion:'O que estudar'}],errorSummary:COMP_SHORT.map(c=>({competency:c,mainError:'Principal erro desta competência',count:1,study:'Conteúdo a estudar',practice:'Exercício sugerido'})),overallFeedback:'Síntese da correção',strengths:[],studyPlan:[]}};$('importResult').innerHTML=`<article class="panel glass"><div class="panel-title">Formato esperado: JSON estruturado</div><div class="panel-description" style="margin:8px 0 12px">O site exige um objeto com este padrão. As marcações incluem os índices start/end do trecho no texto para que o realce seja exato. O arquivo real será gerado para cada correção, então você não precisará preencher esse código manualmente.</div><pre class="code-preview">${esc(JSON.stringify(example,null,2))}</pre></article>`;});
+$('downloadTemplateBtn').addEventListener('click',()=>{const example={format:'escrita.correction',version:1,correction:{id:'exemplo-preencher-id',theme:'PREENCHER: tema da redação',date:new Date().toISOString().slice(0,10),score:0,competencies:{C1:{score:0},C2:{score:0},C3:{score:0},C4:{score:0},C5:{score:0}},text:'PREENCHER: texto integral da redação',annotations:[],errorSummary:COMP_SHORT.map(c=>({competency:c,mainError:'PREENCHER',count:1,study:'PREENCHER',practice:'PREENCHER'})),overallFeedback:'PREENCHER',strengths:[],studyPlan:[]}};downloadBlob(JSON.stringify(example,null,2),'modelo_correcao_escrita.json','application/json;charset=utf-8');toast('Modelo pronto','O arquivo JSON de exemplo foi baixado. Ele precisa ser preenchido para ser importado.');});
+function renderStudy(){const rows=$('studySummaryRows');if(!essays.length){rows.innerHTML='<tr><td colspan="4"><div class="empty-state">Importe uma correção estruturada para montar sua tabela de padrões.</div></td></tr>';$('studyPlanList').innerHTML='<div class="empty-state">Seu plano de estudo aparecerá aqui depois da primeira importação.</div>';return;}
+ const valid=essays.filter(e=>Array.isArray(e.errorSummary)&&e.errorSummary.length);if(!valid.length){rows.innerHTML='<tr><td colspan="4"><div class="empty-state">As redações salvas ainda não contêm diagnóstico estruturado. Importe os arquivos JSON produzidos com as correções.</div></td></tr>';$('studyPlanList').innerHTML='<div class="empty-state">Nenhum plano de estudo estruturado registrado.</div>';return;}
+ const grouped=COMP_SHORT.map(comp=>{const all=valid.flatMap(e=>(e.errorSummary||[]).filter(x=>x.competency===comp).map(x=>({...x,essayTheme:e.theme,essayDate:e.date})));const patterns=new Map();for(const item of all){const key=item.mainError||'Padrão não especificado';const p=patterns.get(key)||{mainError:key,count:0,essays:new Set(),study:item.study,practice:item.practice,date:item.essayDate};p.count+=Number(item.count)||1;p.essays.add(item.essayTheme);if((item.essayDate||'')>=(p.date||'')){p.study=item.study||p.study;p.practice=item.practice||p.practice;p.date=item.essayDate;}patterns.set(key,p);}const top=[...patterns.values()].sort((a,b)=>b.count-a.count)[0];return {comp,top,total:all.length};});
+ rows.innerHTML=grouped.map(g=>{if(!g.top)return `<tr><td><span class="comp-badge ${g.comp.toLowerCase()}">${g.comp}</span></td><td colspan="3">Sem dados desta competência ainda.</td></tr>`;return `<tr><td><span class="comp-badge ${g.comp.toLowerCase()}">${g.comp}</span><div class="study-tip">${esc(COMP_NAMES[Number(g.comp.slice(1))-1])}</div></td><td><div class="error-title">${esc(g.top.mainError)}</div><div class="study-tip">Presente em ${g.top.essays.size} redação(ões)</div></td><td><strong>${g.top.count}</strong><div class="study-tip">registro(s) do padrão</div></td><td>${esc(g.top.study||'Revisar os comentários associados.')}<div class="study-tip"><strong>Prática:</strong> ${esc(g.top.practice||'Reescreva um trecho aplicando a orientação.')}</div></td></tr>`;}).join('');
+ const plans=valid.flatMap(e=>(e.studyPlan||[]).map(p=>({...p,theme:e.theme,date:e.date}))).sort((a,b)=>(Number(a.priority)||99)-(Number(b.priority)||99));const dedup=[];const seen=new Set();for(const p of plans){const k=(p.title||'')+'|'+(p.description||'');if(!seen.has(k)){seen.add(k);dedup.push(p);}}$('studyPlanList').innerHTML=dedup.slice(0,8).map(p=>`<div class="insight"><div class="insight-icon attention">${svgIcon('warn')}</div><div><strong>${esc(p.title||'Prioridade de estudo')}</strong><p>${esc(p.description||'Consulte as marcações da correção.')}<br><span style="font-size:9px">Origem: ${esc(p.theme||'correção importada')}</span></p></div></div>`).join('')||'<div class="panel-description">O arquivo não contém etapas detalhadas de estudo.</div>';
+}
+function annotationColor(comp){return ({C1:'c1',C2:'c2',C3:'c3',C4:'c4',C5:'c5'})[comp]||'c1';}
+let activeEssayId=null;
+function renderReader(id){const e=essays.find(x=>x.id===id);if(!e)return;activeEssayId=id;$('readerThemeHeading').textContent=e.theme;$('readerMeta').textContent=`${fmtDate(e.date)} · ${Array.isArray(e.annotations)?e.annotations.length:0} marcações · clique nos destaques para abrir o comentário`;$('readerScore').innerHTML=`<div class="reader-score-big">${Number(e.score)||0}<span style="font-size:11px;color:var(--muted);font-weight:650"> / 1000 pontos</span></div><span class="pill">${e.source==='sample'?'Exemplo demonstrativo':'Correção importada'}</span>${e.sourceFile?`<span class="pill">PDF de referência: ${esc(e.sourceFile)}</span>`:''}`;
+ const textValue=String(e.text||'');const annotations=Array.isArray(e.annotations)?[...e.annotations].sort((a,b)=>a.start-b.start):[];let html='',cursor=0,validCount=0;for(const a of annotations){if(a.start<cursor||a.start<0||a.end>textValue.length||textValue.slice(a.start,a.end)!==a.quote)continue;html+=esc(textValue.slice(cursor,a.start))+`<mark class="competency-mark ${annotationColor(a.competency)}" id="mark-${esc(a.id)}" data-annotation="${esc(a.id)}" role="button" tabindex="0" aria-label="${esc(a.competency)}: ${esc(a.category)}">${esc(textValue.slice(a.start,a.end))}</mark>`;cursor=a.end;validCount++;}html+=esc(textValue.slice(cursor));
+ if(textValue){$('readerEssayText').innerHTML=html.split(/\n\n/).map(p=>`<p>${p.replace(/\n/g,'<br>')}</p>`).join('');}else{$('readerEssayText').innerHTML='<div class="empty-state">Este registro não contém o texto integral. Importe a versão estruturada que acompanha a correção para ativar as marcações.</div>';}
+ $('annotationCountPill').textContent=`${validCount} marcações`;
+ $('readerComments').innerHTML=annotations.length?annotations.map((a,i)=>`<article class="comment-card" data-comment="${esc(a.id)}" tabindex="0"><div class="comment-card-head"><span class="comp-badge ${annotationColor(a.competency)}">${esc(a.competency)}</span><span style="font-size:9px;color:var(--muted)">${i+1}/${annotations.length}</span></div><div class="comment-quote">“${esc(a.quote)}”</div><div class="comment-copy"><strong>${esc(a.category||'Comentário')}</strong><br>${esc(a.comment||'Sem comentário detalhado.')}</div>${a.studySuggestion?`<div class="comment-study"><strong>O que estudar:</strong> ${esc(a.studySuggestion)}</div>`:''}</article>`).join(''):'<div class="empty-state">Nenhuma marcação foi incluída neste arquivo. Nas próximas correções, o JSON incluirá trechos e comentários ligados ao texto.</div>';
+ function selectAnnotation(id,scrollToMark=false){document.querySelectorAll('.competency-mark,.comment-card').forEach(el=>el.classList.toggle('selected',el.dataset.annotation===id||el.dataset.comment===id));const mark=$(`mark-${id}`),comment=document.querySelector(`[data-comment="${CSS.escape(id)}"]`);if(scrollToMark&&mark)mark.scrollIntoView({behavior:'smooth',block:'center'});if(comment)comment.scrollIntoView({behavior:'smooth',block:'nearest'});}
+ $('readerEssayText').querySelectorAll('[data-annotation]').forEach(mark=>{mark.addEventListener('click',()=>selectAnnotation(mark.dataset.annotation,false));mark.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();selectAnnotation(mark.dataset.annotation,false);}});});$('readerComments').querySelectorAll('[data-comment]').forEach(card=>{card.addEventListener('click',()=>selectAnnotation(card.dataset.comment,true));card.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();selectAnnotation(card.dataset.comment,true);}});});
+ const errors=Array.isArray(e.errorSummary)?e.errorSummary:[];$('readerErrorRows').innerHTML=COMP_SHORT.map((comp,i)=>{const er=errors.find(x=>x.competency===comp);return `<tr><td><span class="comp-badge ${annotationColor(comp)}">${comp}</span><div class="study-tip">${esc(COMP_NAMES[i])}</div></td><td><strong>${e.comps&&Number.isFinite(e.comps[i])?e.comps[i]:'—'}/200</strong></td><td>${esc(er?.mainError||'Nenhum erro resumido no arquivo.')}</td><td>${esc(er?.study||'Consulte as marcações desta competência.')}${er?.practice?`<div class="study-tip"><strong>Prática:</strong> ${esc(er.practice)}</div>`:''}</td></tr>`;}).join('');$('readerFeedback').textContent=e.notes||'O arquivo não incluiu um feedback geral.';
+ $('pageEyebrow').textContent='LEITURA INTERATIVA';$('pageTitle').textContent='Sua redação, trecho por trecho.';$('pageSubtitle').textContent='Clique nas marcações coloridas para consultar os comentários.';
+}
+function showEssay(id){const e=essays.find(x=>x.id===id);if(!e)return;renderReader(id);setView('reader');renderReader(id);}
+$('readerBack').addEventListener('click',()=>setView('essays'));$('readerEdit').addEventListener('click',()=>{const e=essays.find(x=>x.id===activeEssayId);if(!e)return;openModal(e,true);editingId=e.id;$('fSource').value=e.source==='json'?'json':(e.source==='pdf'?'json':'manual');});
+// Seed the demo once; structured corrections replace demonstration examples on first import.
+if(!localStorage.getItem('escrita_essays_v1'))saveData();if(!localStorage.getItem('escrita_goal_v1'))saveGoalLocal();render();
+})();
+</script>
+</body>
+</html>
